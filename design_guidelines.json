@@ -1,0 +1,178 @@
+{
+  "app_name": "Cosmos",
+  "theme": "dark",
+  "archetype": "Jewel & Luxury / Stargazing Adapted",
+  "design_philosophy": "Deep, celestial, and calm. The UI must prioritize scotopic (night) vision preservation using layered darkness, desaturated midnight blues, and soft gold accents. High contrast where necessary for legibility in low light, avoiding pure blacks or blinding whites.",
+  "colors": {
+    "background": {
+      "app": "#0B0E14",
+      "surface": "#171C28",
+      "surface_elevated": "#1E2536",
+      "glass": "rgba(11, 14, 20, 0.85)"
+    },
+    "primary": {
+      "gold": "#F2C94C",
+      "gold_hover": "#E5B03C"
+    },
+    "accent": {
+      "night_vision_red": "#E03E3E",
+      "nebula_purple": "#2D1B4E",
+      "starlight_blue": "#3B82F6"
+    },
+    "text": {
+      "primary": "#F8FAFC",
+      "secondary": "#94A3B8",
+      "muted": "#64748B",
+      "inverse": "#0B0E14"
+    },
+    "border": {
+      "default": "#2A3241",
+      "focus": "#F2C94C"
+    }
+  },
+  "typography": {
+    "heading_font": "Cormorant Garamond",
+    "body_font": "Outfit",
+    "scales": {
+      "h1": "text-4xl sm:text-5xl font-serif tracking-tight text-[#F8FAFC]",
+      "h2": "text-2xl sm:text-3xl font-serif tracking-tight text-[#F8FAFC]",
+      "h3": "text-xl font-sans font-medium text-[#F8FAFC]",
+      "body": "text-base font-sans text-[#94A3B8] leading-relaxed",
+      "caption": "text-sm font-sans tracking-wide text-[#64748B] uppercase"
+    },
+    "pairing_rules": "Use Cormorant Garamond for all primary screen titles and celestial event names to evoke a classic, scientific feel. Use Outfit for all functional UI (buttons, tabs, inputs, descriptions) for modern legibility."
+  },
+  "spacing_and_layout": {
+    "container_padding": "p-4 sm:p-6",
+    "section_gap": "gap-8 sm:gap-12",
+    "card_padding": "p-5",
+    "border_radius": {
+      "card": "rounded-2xl",
+      "button": "rounded-full",
+      "input": "rounded-xl"
+    },
+    "safe_area": "Ensure padding bottom accounts for mobile safe areas and fixed tab bar (pb-24)."
+  },
+  "components": {
+    "tab_bar": {
+      "style": "Fixed at bottom, glassmorphism (backdrop-blur-xl bg-[#0B0E14]/85), border-t border-[#2A3241].",
+      "active_state": "text-[#F2C94C]",
+      "inactive_state": "text-[#64748B]"
+    },
+    "cards": {
+      "style": "bg-[#171C28] border border-[#2A3241] rounded-2xl overflow-hidden shadow-lg",
+      "hover": "Active state scales down slightly (scale-95) for mobile tap feedback."
+    },
+    "buttons": {
+      "primary": "bg-[#F2C94C] text-[#0B0E14] font-semibold rounded-full px-6 py-3 shadow-[0_0_15px_rgba(242,201,76,0.2)]",
+      "secondary": "bg-[#1E2536] text-[#F8FAFC] border border-[#2A3241] font-medium rounded-full px-6 py-3",
+      "night_vision_toggle": "bg-[#E03E3E]/10 text-[#E03E3E] border border-[#E03E3E]/30 rounded-full px-4 py-2"
+    },
+    "inputs": {
+      "style": "bg-[#0B0E14] border border-[#2A3241] text-[#F8FAFC] rounded-xl px-4 py-3 placeholder-[#64748B] focus:border-[#F2C94C] focus:ring-1 focus:ring-[#F2C94C]"
+    },
+    "calendar_cells": {
+      "style": "bg-[#171C28] rounded-xl border border-[#2A3241] flex flex-col items-center justify-center p-3",
+      "active": "bg-[#2D1B4E] border-[#F2C94C] text-[#F2C94C]"
+    },
+    "tags": {
+      "style": "bg-[#1E2536] text-[#94A3B8] text-xs px-2.5 py-1 rounded-md border border-[#2A3241]"
+    }
+  },
+  "icons": {
+    "library": "@expo/vector-icons",
+    "mapping": {
+      "feed": {"family": "Ionicons", "name": "compass-outline"},
+      "calendar": {"family": "MaterialCommunityIcons", "name": "calendar-month-outline"},
+      "sky_map": {"family": "Ionicons", "name": "map-outline"},
+      "logbook": {"family": "Ionicons", "name": "book-open-outline"},
+      "star": {"family": "Ionicons", "name": "star"},
+      "moon": {"family": "Ionicons", "name": "moon"},
+      "telescope": {"family": "MaterialCommunityIcons", "name": "telescope"},
+      "weather": {"family": "Ionicons", "name": "cloudy-night-outline"},
+      "location": {"family": "Ionicons", "name": "location-outline"}
+    }
+  },
+  "screens": {
+    "welcome_auth": {
+      "layout": "Full-screen background image of the Milky Way with a heavy dark gradient overlay (bg-gradient-to-b from-[#0B0E14]/40 to-[#0B0E14]). Center-aligned logo and Cormorant Garamond title. Input stack at the bottom third, followed by a gold primary login button and a Google Auth button.",
+      "testid": "auth-screen"
+    },
+    "feed_home": {
+      "layout": "Header with app title and a 'Night Vision' toggle icon. Vertically scrolling list of 'Sighting Cards'. Each card features a user avatar, sighting image (full width, max-h-64 object-cover), location tag, equipment tags (e.g., 'Celestron NexStar'), sky conditions, and a minimalist like/comment bar.",
+      "testid": "feed-screen"
+    },
+    "cosmos_calendar": {
+      "layout": "Horizontal scrolling week view at the top. Vertical list of astronomical events below. Each event item displays a date block on the left, event title (Cormorant Garamond), short description, and an 'Add Reminder' button.",
+      "testid": "calendar-screen"
+    },
+    "sky_map": {
+      "layout": "Full-screen interactive map interface (dark mode map style). Floating action buttons (FABs) for layers and current location. Red pins indicating dark sky spots. A bottom sheet peeks up showing details of the selected spot.",
+      "testid": "sky-map-screen"
+    },
+    "logbook_profile": {
+      "layout": "User profile header with stats grid (e.g., '12 Nebulae', '5 Planets'). A bento-box grid of recent personal sightings and journal entries. A floating 'New Sighting' FAB at the bottom right.",
+      "testid": "logbook-screen"
+    },
+    "event_detail": {
+      "layout": "Large hero image of the celestial event fading into the background. Title in large serif font. Tabs for 'Jargon-Free' (beginner) and 'Advanced Specs' (amateur astronomer).",
+      "testid": "event-detail-screen"
+    },
+    "new_sighting_compose": {
+      "layout": "Modal slide-up sheet. Image upload placeholder. Form fields for Title, Location (auto-detect icon), Equipment used, and Viewing conditions. Submit button in gold.",
+      "testid": "compose-sighting-modal"
+    }
+  },
+  "media": {
+    "milky_way": {
+      "url": "https://images.unsplash.com/photo-1677120111814-7d8ca1cfd902?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwxfHxtaWxreSUyMHdheSUyMGdhbGF4eSUyMHN0YXJyeSUyMG5pZ2h0fGVufDB8fHx8MTc3NzgyMTg5Mnww&ixlib=rb-4.1.0&q=85",
+      "description": "Milky Way Galaxy - Used for Welcome/Auth Background",
+      "category": "background"
+    },
+    "nebula": {
+      "url": "https://images.unsplash.com/photo-1650365449083-b3113ff48337?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA0MTJ8MHwxfHNlYXJjaHwzfHxuZWJ1bGElMjBzcGFjZSUyMGRlZXAlMjBzcGFjZXxlbnwwfHx8fDE3Nzc4MjE4OTJ8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Deep Space Nebula - Used for Feed sample sightings and Logbook",
+      "category": "feed_image"
+    },
+    "andromeda": {
+      "url": "https://images.unsplash.com/photo-1543722530-d2c3201371e7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODR8MHwxfHNlYXJjaHw0fHxBbmRyb21lZGElMjBnYWxheHklMjBkZWVwJTIwc3BhY2V8ZW58MHx8fHwxNzc3ODIxOTA4fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Andromeda Galaxy - Used for Logbook entries or Feed",
+      "category": "feed_image"
+    },
+    "aurora": {
+      "url": "https://images.unsplash.com/photo-1723458226640-69fd1b7a355d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MDV8MHwxfHNlYXJjaHw0fHxhdXJvcmElMjBib3JlYWxpcyUyMG5pZ2h0JTIwc2t5fGVufDB8fHx8MTc3NzgyMTkwOHww&ixlib=rb-4.1.0&q=85",
+      "description": "Aurora Borealis - Used for Sightings Feed",
+      "category": "feed_image"
+    },
+    "meteor_shower": {
+      "url": "https://images.unsplash.com/photo-1544800360-4e2e14eb7558?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NjV8MHwxfHNlYXJjaHwxfHxtZXRlb3IlMjBzaG93ZXIlMjBuaWdodHxlbnwwfHx8fDE3Nzc4MjE5MDh8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Meteor Shower - Used for Calendar Event Detail hero image",
+      "category": "event_image"
+    },
+    "jupiter": {
+      "url": "https://images.unsplash.com/photo-1711989327929-60386c8d3a66?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwxfHxKdXBpdGVyJTIwcGxhbmV0JTIwc3BhY2V8ZW58MHx8fHwxNzc3ODIxOTA5fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Jupiter Planet - Used for Calendar Event Detail",
+      "category": "event_image"
+    },
+    "telescope": {
+      "url": "https://images.unsplash.com/photo-1603051740465-23dc9bc6da38?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwyfHx0ZWxlc2NvcGUlMjBuaWdodCUyMHNreXxlbnwwfHx8fDE3Nzc4MjE5MjF8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Telescope silhouette against night sky - Used for Equipment placeholders or Profile Header",
+      "category": "profile_image"
+    },
+    "lunar_eclipse": {
+      "url": "https://images.unsplash.com/photo-1742770264974-731ca9a7589d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxsdW5hciUyMGVjbGlwc2UlMjBibG9vZCUyMG1vb258ZW58MHx8fHwxNzc3ODIxOTIxfDA&ixlib=rb-4.1.0&q=85",
+      "description": "Blood Moon Lunar Eclipse - Used for Event Detail or Feed",
+      "category": "event_image"
+    }
+  },
+  "testing_attributes": {
+    "convention": "data-testid",
+    "examples": [
+      "login-submit-button",
+      "feed-sighting-card",
+      "calendar-event-item",
+      "compose-sighting-button",
+      "night-vision-toggle"
+    ]
+  }
+}
