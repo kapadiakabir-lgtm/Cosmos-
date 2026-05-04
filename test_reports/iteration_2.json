@@ -1,0 +1,56 @@
+{
+  "summary": "Backend regression 25/25 PASS (auth, events, reminders, sightings, sky-spots). Frontend location-tailored UI features work end-to-end after fixing a JSX typo in app/_layout.tsx (LocationProvider opening tag was missing). Feed location chip, nearest spot, featured-event visibility pill, Calendar 'My sky' filter + VISIBLE pills, Sky-Map CLOSEST banner, Event detail visible-from-you line, and Logbook location panel + Forget all verified on Northern-hemisphere coords (51.5, -0.12). One remaining issue: the compose screen 'Comet' chip still logs an MCI icon warning because `comet` is also not a valid MaterialCommunityIcons name (was `comet-design`, now `comet`, neither exists).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "app/compose.tsx (Comet chip)",
+        "issue": "Console warning: '\"comet\" is not a valid icon name for family \"material-community\"'. The object-type-comet chip still emits an invalid-icon warning. Originally `comet-design`, changed to `comet` — neither is a valid MCI icon. Valid MCI alternatives include `meteor`, `star-shooting`, `atom-variant`, or use Ionicons instead.",
+        "testID": "object-type-comet",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Feed location chip (web)",
+        "issues": ["On web, expo-location reverseGeocodeAsync returns empty, so chip reads 'Your location · Northern hemisphere' without city. Acceptable per review note, but consider showing a coord fallback (e.g. '51.50°N' or the hemisphere-only copy) to avoid the generic 'Your location' placeholder."]
+      }
+    ],
+    "react_native_issues": [
+      {
+        "component": "app/_layout.tsx",
+        "issue": "FIXED by testing agent. The LocationProvider was imported and had a closing </LocationProvider> tag at line 28 but NO opening <LocationProvider> tag — causing a Metro SyntaxError that crashed the whole app at startup (red screen: 'Expected corresponding JSX closing tag for <AuthProvider>'). Added the opening tag inside AuthProvider so location context is available under the auth boundary."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cosmos_api.py",
+    "/app/test_reports/pytest/cosmos_results.xml"
+  ],
+  "action_items": [
+    "Replace MaterialCommunityIcons name `comet` with a valid MCI icon (e.g. `meteor`, `star-shooting`, `atom-variant`) or switch to Ionicons. Verify no more 'is not a valid icon name for family material-community' warnings in console.",
+    "Optional: review _layout.tsx structure — testing agent inserted LocationProvider inside AuthProvider to fix the JSX error. Confirm provider nesting order is as intended (Auth outside Location, or reverse)."
+  ],
+  "critical_code_review_comments": [
+    "JSX syntax error in app/_layout.tsx blocked the entire web bundle (only closing </LocationProvider> existed). A lint/typecheck run before handoff would have caught this.",
+    "LocationContext.request() persists data to AsyncStorage with KEY 'cosmos_location_v1' and correctly derives hemisphere from latitude sign — logic is sound.",
+    "isVisibleFromHemisphere fallback returns `true` when visibility string has no Northern/Southern keyword — this means 'specific regions' counts as visible, which matches spec intent.",
+    "Feed.tsx computes closestSpot by mapping+sorting full spots list on every render — fine for N=8 but consider useMemo if spots grow."
+  ],
+  "updated_files": [
+    "/app/frontend/app/_layout.tsx (added missing <LocationProvider> opening tag inside AuthProvider)"
+  ],
+  "success_rate": {
+    "backend": "100% (25/25)",
+    "frontend": "95% - all 9 tested flows pass; 1 non-blocking icon warning remains"
+  },
+  "seed_data_creation": "Registered ephemeral test user test.cosmos+{timestamp}@example.com via UI. Backend regression test also creates TEST_cosmos_{uuid}@example.com plus a reminder and 2 sightings — not cleaned up (same pattern as prior iteration).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend is an Expo web preview. For location-gated features: use page.context.grant_permissions(['geolocation'], origin=<origin>) and page.context.set_geolocation({...}) BEFORE page.goto. On web, reverseGeocodeAsync returns empty so city/region/country stay undefined — hemisphere is still derived from latitude. Register flow sometimes returns a transient 502 (cold start of backend ingress) — retry submit once. Public URL: EXPO_PUBLIC_BACKEND_URL = https://celestial-journal.preview.emergentagent.com. Backend test suite: pytest /app/backend/tests/test_cosmos_api.py.",
+  "rca_of_issue": "Root cause of initial app crash: app/_layout.tsx imported LocationProvider and added its closing tag </LocationProvider> at line 28 but never opened the tag, producing Metro SyntaxError 'Expected corresponding JSX closing tag for <AuthProvider>'. Reproduction: navigate to any route → red-screen error overlay. Mitigation: added <LocationProvider> opening tag just inside <AuthProvider> (after the imports already in place). Verified by restarting expo and re-running playwright — app now boots, auth works, and all 8 location-tailored testIDs resolve."
+}
