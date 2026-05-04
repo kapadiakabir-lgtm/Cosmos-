@@ -43,8 +43,14 @@ export default function FeedScreen() {
 
   const handleLike = async (id: string) => {
     try {
-      await api.likeSighting(id);
-      setSightings(prev => prev.map(s => s.sighting_id === id ? { ...s, likes: s.likes + 1 } : s));
+      const res = await api.likeSighting(id);
+      setSightings(prev => prev.map(s => {
+        if (s.sighting_id !== id) return s;
+        const liked_by = new Set<string>(s.liked_by || []);
+        if (res.liked && user) liked_by.add(user.user_id);
+        else if (user) liked_by.delete(user.user_id);
+        return { ...s, likes: res.likes, liked_by: Array.from(liked_by) };
+      }));
     } catch {}
   };
 
@@ -189,7 +195,11 @@ export default function FeedScreen() {
                   </View>
                   <View style={styles.actionsRow}>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => handleLike(s.sighting_id)} testID={`like-${s.sighting_id}`}>
-                      <Ionicons name="star-outline" size={18} color={colors.gold} />
+                      <Ionicons
+                        name={user && (s.liked_by || []).includes(user.user_id) ? 'star' : 'star-outline'}
+                        size={18}
+                        color={colors.gold}
+                      />
                       <Text style={styles.actionText}>{s.likes}</Text>
                     </TouchableOpacity>
                     <View style={styles.actionBtn}>

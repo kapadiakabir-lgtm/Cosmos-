@@ -49,7 +49,7 @@ export const api = {
   createSighting: (payload: any) =>
     request('/sightings', { method: 'POST', body: JSON.stringify(payload) }, true),
   likeSighting: (id: string) =>
-    request(`/sightings/${id}/like`, { method: 'POST' }, true),
+    request(`/sightings/${id}/like`, { method: 'POST' }, true) as Promise<{ liked: boolean; likes: number }>,
 
   listSkySpots: () => request('/sky-spots'),
 };

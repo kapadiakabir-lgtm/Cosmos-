@@ -88,6 +88,7 @@ class Sighting(BaseModel):
     image_base64: Optional[str] = None
     created_at: str
     likes: int = 0
+    liked_by: List[str] = Field(default_factory=list)
 
 class SightingCreate(BaseModel):
     title: str
@@ -246,6 +247,7 @@ async def create_sighting(data: SightingCreate, user: User = Depends(get_current
         "image_base64": data.image_base64,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "likes": 0,
+        "liked_by": [],
     }
     await db.sightings.insert_one(sighting)
     # Update user stats
@@ -265,10 +267,23 @@ async def my_sightings(user: User = Depends(get_current_user)):
 
 @api_router.post("/sightings/{sighting_id}/like")
 async def like_sighting(sighting_id: str, user: User = Depends(get_current_user)):
-    result = await db.sightings.update_one({"sighting_id": sighting_id}, {"$inc": {"likes": 1}})
-    if result.matched_count == 0:
+    sighting = await db.sightings.find_one({"sighting_id": sighting_id}, {"_id": 0})
+    if not sighting:
         raise HTTPException(status_code=404, detail="Not found")
-    return {"ok": True}
+    liked_by = sighting.get("liked_by") or []
+    if user.user_id in liked_by:
+        # unlike
+        await db.sightings.update_one(
+            {"sighting_id": sighting_id},
+            {"$pull": {"liked_by": user.user_id}, "$inc": {"likes": -1}},
+        )
+        return {"liked": False, "likes": max(0, (sighting.get("likes") or 0) - 1)}
+    else:
+        await db.sightings.update_one(
+            {"sighting_id": sighting_id},
+            {"$addToSet": {"liked_by": user.user_id}, "$inc": {"likes": 1}},
+        )
+        return {"liked": True, "likes": (sighting.get("likes") or 0) + 1}
 
 
 # ===== DARK SKY SPOTS =====
