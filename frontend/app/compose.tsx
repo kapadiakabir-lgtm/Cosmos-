@@ -16,7 +16,7 @@ const OBJECT_TYPES = [
   { key: 'galaxy', label: 'Galaxy', icon: 'shimmer' },
   { key: 'meteor', label: 'Meteor', icon: 'meteor' },
   { key: 'moon', label: 'Moon', icon: 'moon-waning-crescent' },
-  { key: 'comet', label: 'Comet', icon: 'comet' },
+  { key: 'comet', label: 'Comet', icon: 'star-shooting' },
   { key: 'star_cluster', label: 'Cluster', icon: 'star-four-points' },
 ];
 
