@@ -43,7 +43,7 @@ export default function LogbookScreen() {
               <Text style={styles.bigAvatarText}>{(user.name || '?')[0].toUpperCase()}</Text>
             </View>
             <Text style={styles.userName}>{user.name}</Text>
-            <Text style={styles.userEmail}>{user.email}</Text>
+            <Text style={styles.userEmail}>Stargazer since {new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</Text>
             <TouchableOpacity style={styles.logoutBtn} onPress={logout} testID="logout-button">
               <Ionicons name="log-out-outline" size={14} color={colors.textSecondary} />
               <Text style={styles.logoutText}>Sign out</Text>

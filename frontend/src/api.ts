@@ -49,12 +49,8 @@ async function request(path: string, opts: RequestInit = {}, auth = false) {
 }
 
 export const api = {
-  register: (email: string, password: string, name: string) =>
-    request('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, name }) }),
-  login: (email: string, password: string) =>
-    request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  resetPassword: (email: string, new_password: string) =>
-    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, new_password }) }),
+  identify: (username: string) =>
+    request('/auth/identify', { method: 'POST', body: JSON.stringify({ username }) }),
   me: () => request('/auth/me', {}, true),
 
   listEvents: (upcomingOnly = false) =>

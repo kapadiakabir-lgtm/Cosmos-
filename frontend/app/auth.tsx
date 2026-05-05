@@ -8,72 +8,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../src/AuthContext';
 import { colors, media, spacing, radius } from '../src/theme';
 
-type Mode = 'login' | 'register' | 'reset';
-
 export default function AuthScreen() {
-  const [mode, setMode] = useState<Mode>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, register, resetPassword } = useAuth();
+  const { identify } = useAuth();
   const router = useRouter();
 
   const submit = async () => {
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPassword = password; // never trim — could break legitimate trailing-space passwords
-    const cleanName = name.trim();
-
-    if (!cleanEmail || !cleanPassword) {
-      Alert.alert('Missing info', 'Please fill in email and password.');
+    const name = username.trim();
+    if (name.length < 2) {
+      Alert.alert('Pick a name', 'Use at least 2 characters.');
       return;
     }
-    if (mode === 'register' && !cleanName) {
-      Alert.alert('Missing info', 'Please enter your name.');
-      return;
-    }
-    if ((mode === 'register' || mode === 'reset') && cleanPassword.length < 6) {
-      Alert.alert('Password too short', 'Use at least 6 characters.');
-      return;
-    }
-
     setLoading(true);
     try {
-      if (mode === 'login') {
-        await login(cleanEmail, cleanPassword);
-      } else if (mode === 'register') {
-        await register(cleanEmail, cleanPassword, cleanName);
-      } else {
-        await resetPassword(cleanEmail, cleanPassword);
-        Alert.alert('Password updated', 'You are now signed in with your new password.');
-      }
+      await identify(name);
       router.replace('/(tabs)/feed');
     } catch (e: any) {
-      const msg = e?.message || 'Please try again';
-      // Make 401 friendlier
-      if (msg.toLowerCase().includes('invalid credentials')) {
-        Alert.alert(
-          'Sign-in failed',
-          'Email or password is incorrect. If you forgot your password, tap "Forgot password?" below.'
-        );
-      } else {
-        Alert.alert('Sign-in failed', msg);
-      }
+      Alert.alert("Couldn't sign you in", e?.message || 'Please try again');
     } finally {
       setLoading(false);
     }
   };
-
-  const title =
-    mode === 'login' ? 'Welcome back' : mode === 'register' ? 'Begin your journey' : 'Reset password';
-  const subtitle =
-    mode === 'login'
-      ? 'Sign in to your observatory'
-      : mode === 'register'
-      ? 'Create your stargazer profile'
-      : 'Enter your email and a new password';
-  const cta =
-    mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create account' : 'Set new password';
 
   return (
     <ImageBackground source={{ uri: media.milky_way }} style={styles.bg} testID="auth-screen">
@@ -89,74 +45,41 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.subtitle}>{subtitle}</Text>
+            <Text style={styles.title}>What should we call you?</Text>
+            <Text style={styles.subtitle}>
+              Pick a stargazer name. No password, no email — just step into the night.
+            </Text>
 
-            {mode === 'register' && (
-              <TextInput
-                style={styles.input}
-                placeholder="Your name"
-                placeholderTextColor={colors.textMuted}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                autoCorrect={false}
-                testID="auth-name-input"
-              />
-            )}
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder="e.g. Galileo, MoonChaser, Astro_Aria"
               placeholderTextColor={colors.textMuted}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="words"
               autoCorrect={false}
-              autoComplete="email"
-              textContentType="emailAddress"
-              testID="auth-email-input"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder={mode === 'reset' ? 'New password (min 6 chars)' : 'Password'}
-              placeholderTextColor={colors.textMuted}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete={mode === 'register' || mode === 'reset' ? 'new-password' : 'current-password'}
-              textContentType={mode === 'register' || mode === 'reset' ? 'newPassword' : 'password'}
-              testID="auth-password-input"
+              maxLength={40}
+              returnKeyType="go"
+              onSubmitEditing={submit}
+              testID="auth-username-input"
             />
 
-            <TouchableOpacity style={styles.primaryBtn} onPress={submit} disabled={loading} testID="auth-submit-button">
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={submit}
+              disabled={loading}
+              testID="auth-submit-button"
+            >
               {loading ? (
                 <ActivityIndicator color={colors.textInverse} />
               ) : (
-                <Text style={styles.primaryBtnText}>{cta}</Text>
+                <Text style={styles.primaryBtnText}>Step into the night</Text>
               )}
             </TouchableOpacity>
 
-            {mode === 'login' && (
-              <TouchableOpacity onPress={() => setMode('reset')} testID="auth-forgot-password">
-                <Text style={[styles.switch, { color: colors.gold }]}>Forgot password?</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              onPress={() => setMode(mode === 'login' ? 'register' : 'login')}
-              testID="auth-toggle-mode"
-            >
-              <Text style={styles.switch}>
-                {mode === 'login'
-                  ? 'New here? Create an account'
-                  : mode === 'register'
-                  ? 'Already have an account? Sign in'
-                  : 'Back to sign in'}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.hint}>
+              Use the same name later to return to your logbook on any device.
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -183,15 +106,15 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
     padding: spacing.lg,
   },
-  title: { fontSize: 24, color: colors.textPrimary, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }), marginBottom: 4 },
-  subtitle: { color: colors.textSecondary, marginBottom: spacing.lg },
+  title: { fontSize: 22, color: colors.textPrimary, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }), marginBottom: 4 },
+  subtitle: { color: colors.textSecondary, marginBottom: spacing.lg, lineHeight: 20 },
   input: {
     backgroundColor: colors.bg,
     borderWidth: 1, borderColor: colors.border,
     color: colors.textPrimary,
     paddingHorizontal: spacing.md, paddingVertical: 14,
     borderRadius: radius.md, marginBottom: spacing.md,
-    fontSize: 15,
+    fontSize: 16,
   },
   primaryBtn: {
     backgroundColor: colors.gold,
@@ -200,5 +123,5 @@ const styles = StyleSheet.create({
     shadowColor: colors.gold, shadowOpacity: 0.25, shadowRadius: 16, shadowOffset: { width: 0, height: 4 },
   },
   primaryBtnText: { color: colors.textInverse, fontWeight: '700', fontSize: 15, letterSpacing: 0.5 },
-  switch: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.lg, fontSize: 13 },
+  hint: { color: colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: spacing.md, lineHeight: 16 },
 });

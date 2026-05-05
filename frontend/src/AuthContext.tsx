@@ -3,7 +3,7 @@ import { api, getToken, setToken, clearToken } from './api';
 
 type User = {
   user_id: string;
-  email: string;
+  email?: string | null;
   name: string;
   avatar?: string | null;
   created_at: string;
@@ -13,9 +13,7 @@ type User = {
 type AuthCtx = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  resetPassword: (email: string, newPassword: string) => Promise<void>;
+  identify: (username: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -42,20 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { loadUser(); }, []);
 
-  const login = async (email: string, password: string) => {
-    const data = await api.login(email, password);
-    await setToken(data.token);
-    setUser(data.user);
-  };
-
-  const register = async (email: string, password: string, name: string) => {
-    const data = await api.register(email, password, name);
-    await setToken(data.token);
-    setUser(data.user);
-  };
-
-  const resetPassword = async (email: string, newPassword: string) => {
-    const data = await api.resetPassword(email, newPassword);
+  const identify = async (username: string) => {
+    const data = await api.identify(username);
     await setToken(data.token);
     setUser(data.user);
   };
@@ -70,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, resetPassword, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, identify, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

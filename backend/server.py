@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import re
 import logging
 import uuid
 import jwt
@@ -39,13 +40,9 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-class PasswordReset(BaseModel):
-    email: EmailStr
-    new_password: str
-
 class User(BaseModel):
     user_id: str
-    email: str
+    email: Optional[str] = None
     name: str
     avatar: Optional[str] = None
     created_at: str
@@ -54,6 +51,9 @@ class User(BaseModel):
 class AuthResponse(BaseModel):
     token: str
     user: User
+
+class IdentifyRequest(BaseModel):
+    username: str
 
 class CelestialEvent(BaseModel):
     event_id: str
@@ -145,60 +145,40 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
 
 
 # ===== AUTH ROUTES =====
-@api_router.post("/auth/register", response_model=AuthResponse)
-async def register(data: UserRegister):
-    existing = await db.users.find_one({"email": data.email.lower()})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    user_id = f"user_{uuid.uuid4().hex[:12]}"
-    user_doc = {
-        "user_id": user_id,
-        "email": data.email.lower(),
-        "name": data.name,
-        "password_hash": hash_password(data.password),
-        "avatar": None,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "stats": {"sightings": 0, "nebulae": 0, "planets": 0, "galaxies": 0, "meteors": 0},
-    }
-    await db.users.insert_one(user_doc)
-    token = create_token(user_id)
-    user_doc.pop("password_hash", None)
-    user_doc.pop("_id", None)
+@api_router.post("/auth/identify", response_model=AuthResponse)
+async def identify(data: IdentifyRequest):
+    """Username-only login: looks up an existing user by case-insensitive name,
+    or creates a fresh one. No password, no email — fully trustless. Anyone
+    typing the same name shares the same logbook."""
+    name = data.username.strip()
+    if len(name) < 2:
+        raise HTTPException(status_code=400, detail="Name must be at least 2 characters")
+    if len(name) > 40:
+        raise HTTPException(status_code=400, detail="Name must be 40 characters or fewer")
+
+    user_doc = await db.users.find_one(
+        {"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}},
+        {"_id": 0, "password_hash": 0},
+    )
+    if not user_doc:
+        user_id = f"user_{uuid.uuid4().hex[:12]}"
+        user_doc = {
+            "user_id": user_id,
+            "email": None,
+            "name": name,
+            "avatar": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "stats": {"sightings": 0, "nebulae": 0, "planets": 0, "galaxies": 0, "meteors": 0},
+        }
+        await db.users.insert_one(user_doc)
+        user_doc.pop("_id", None)
+    token = create_token(user_doc["user_id"])
     return AuthResponse(token=token, user=User(**user_doc))
 
-@api_router.post("/auth/login", response_model=AuthResponse)
-async def login(data: UserLogin):
-    user_doc = await db.users.find_one({"email": data.email.lower()})
-    if not user_doc or not user_doc.get("password_hash") or not verify_password(data.password, user_doc["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_token(user_doc["user_id"])
-    user_doc.pop("password_hash", None)
-    user_doc.pop("_id", None)
-    return AuthResponse(token=token, user=User(**user_doc))
 
 @api_router.get("/auth/me", response_model=User)
 async def get_me(user: User = Depends(get_current_user)):
     return user
-
-
-# WARNING: MVP-grade password reset. No email verification — anyone with the
-# email can overwrite the password. Replace with email-link reset (e.g. SendGrid)
-# before going to production with private data at stake.
-@api_router.post("/auth/reset-password", response_model=AuthResponse)
-async def reset_password(data: PasswordReset):
-    user_doc = await db.users.find_one({"email": data.email.lower()})
-    if not user_doc:
-        raise HTTPException(status_code=404, detail="No account with that email")
-    if len(data.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
-    await db.users.update_one(
-        {"user_id": user_doc["user_id"]},
-        {"$set": {"password_hash": hash_password(data.new_password)}},
-    )
-    token = create_token(user_doc["user_id"])
-    user_doc.pop("password_hash", None)
-    user_doc.pop("_id", None)
-    return AuthResponse(token=token, user=User(**user_doc))
 
 
 # ===== EVENTS =====
