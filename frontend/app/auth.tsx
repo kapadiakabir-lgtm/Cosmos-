@@ -8,31 +8,72 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../src/AuthContext';
 import { colors, media, spacing, radius } from '../src/theme';
 
+type Mode = 'login' | 'register' | 'reset';
+
 export default function AuthScreen() {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, resetPassword } = useAuth();
   const router = useRouter();
 
   const submit = async () => {
-    if (!email || !password || (mode === 'register' && !name)) {
-      Alert.alert('Missing info', 'Please fill in all fields.');
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password; // never trim — could break legitimate trailing-space passwords
+    const cleanName = name.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      Alert.alert('Missing info', 'Please fill in email and password.');
       return;
     }
+    if (mode === 'register' && !cleanName) {
+      Alert.alert('Missing info', 'Please enter your name.');
+      return;
+    }
+    if ((mode === 'register' || mode === 'reset') && cleanPassword.length < 6) {
+      Alert.alert('Password too short', 'Use at least 6 characters.');
+      return;
+    }
+
     setLoading(true);
     try {
-      if (mode === 'login') await login(email.trim(), password);
-      else await register(email.trim(), password, name.trim());
+      if (mode === 'login') {
+        await login(cleanEmail, cleanPassword);
+      } else if (mode === 'register') {
+        await register(cleanEmail, cleanPassword, cleanName);
+      } else {
+        await resetPassword(cleanEmail, cleanPassword);
+        Alert.alert('Password updated', 'You are now signed in with your new password.');
+      }
       router.replace('/(tabs)/feed');
     } catch (e: any) {
-      Alert.alert('Sign-in failed', e.message || 'Please try again');
+      const msg = e?.message || 'Please try again';
+      // Make 401 friendlier
+      if (msg.toLowerCase().includes('invalid credentials')) {
+        Alert.alert(
+          'Sign-in failed',
+          'Email or password is incorrect. If you forgot your password, tap "Forgot password?" below.'
+        );
+      } else {
+        Alert.alert('Sign-in failed', msg);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const title =
+    mode === 'login' ? 'Welcome back' : mode === 'register' ? 'Begin your journey' : 'Reset password';
+  const subtitle =
+    mode === 'login'
+      ? 'Sign in to your observatory'
+      : mode === 'register'
+      ? 'Create your stargazer profile'
+      : 'Enter your email and a new password';
+  const cta =
+    mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create account' : 'Set new password';
 
   return (
     <ImageBackground source={{ uri: media.milky_way }} style={styles.bg} testID="auth-screen">
@@ -48,10 +89,8 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.title}>{mode === 'login' ? 'Welcome back' : 'Begin your journey'}</Text>
-            <Text style={styles.subtitle}>
-              {mode === 'login' ? 'Sign in to your observatory' : 'Create your stargazer profile'}
-            </Text>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.subtitle}>{subtitle}</Text>
 
             {mode === 'register' && (
               <TextInput
@@ -60,6 +99,8 @@ export default function AuthScreen() {
                 placeholderTextColor={colors.textMuted}
                 value={name}
                 onChangeText={setName}
+                autoCapitalize="words"
+                autoCorrect={false}
                 testID="auth-name-input"
               />
             )}
@@ -71,15 +112,22 @@ export default function AuthScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
               testID="auth-email-input"
             />
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder={mode === 'reset' ? 'New password (min 6 chars)' : 'Password'}
               placeholderTextColor={colors.textMuted}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete={mode === 'register' || mode === 'reset' ? 'new-password' : 'current-password'}
+              textContentType={mode === 'register' || mode === 'reset' ? 'newPassword' : 'password'}
               testID="auth-password-input"
             />
 
@@ -87,15 +135,26 @@ export default function AuthScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.textInverse} />
               ) : (
-                <Text style={styles.primaryBtnText}>
-                  {mode === 'login' ? 'Sign in' : 'Create account'}
-                </Text>
+                <Text style={styles.primaryBtnText}>{cta}</Text>
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => setMode(mode === 'login' ? 'register' : 'login')} testID="auth-toggle-mode">
+            {mode === 'login' && (
+              <TouchableOpacity onPress={() => setMode('reset')} testID="auth-forgot-password">
+                <Text style={[styles.switch, { color: colors.gold }]}>Forgot password?</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              onPress={() => setMode(mode === 'login' ? 'register' : 'login')}
+              testID="auth-toggle-mode"
+            >
               <Text style={styles.switch}>
-                {mode === 'login' ? "New here? Create an account" : 'Already have an account? Sign in'}
+                {mode === 'login'
+                  ? 'New here? Create an account'
+                  : mode === 'register'
+                  ? 'Already have an account? Sign in'
+                  : 'Back to sign in'}
               </Text>
             </TouchableOpacity>
           </View>

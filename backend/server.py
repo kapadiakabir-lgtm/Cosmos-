@@ -39,6 +39,10 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class PasswordReset(BaseModel):
+    email: EmailStr
+    new_password: str
+
 class User(BaseModel):
     user_id: str
     email: str
@@ -175,6 +179,26 @@ async def login(data: UserLogin):
 @api_router.get("/auth/me", response_model=User)
 async def get_me(user: User = Depends(get_current_user)):
     return user
+
+
+# WARNING: MVP-grade password reset. No email verification — anyone with the
+# email can overwrite the password. Replace with email-link reset (e.g. SendGrid)
+# before going to production with private data at stake.
+@api_router.post("/auth/reset-password", response_model=AuthResponse)
+async def reset_password(data: PasswordReset):
+    user_doc = await db.users.find_one({"email": data.email.lower()})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="No account with that email")
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    await db.users.update_one(
+        {"user_id": user_doc["user_id"]},
+        {"$set": {"password_hash": hash_password(data.new_password)}},
+    )
+    token = create_token(user_doc["user_id"])
+    user_doc.pop("password_hash", None)
+    user_doc.pop("_id", None)
+    return AuthResponse(token=token, user=User(**user_doc))
 
 
 # ===== EVENTS =====

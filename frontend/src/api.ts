@@ -30,11 +30,26 @@ async function request(path: string, opts: RequestInit = {}, auth = false) {
     const token = await getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
-  const res = await fetch(`${BASE}/api${path}`, { ...opts, headers });
+  const fullUrl = `${BASE}/api${path}`;
+  let res: Response;
+  try {
+    res = await fetch(fullUrl, { ...opts, headers });
+  } catch (e: any) {
+    // Network error — backend unreachable or CORS blocked.
+    throw new Error(
+      `Cannot reach API at ${fullUrl}. Check that EXPO_PUBLIC_BACKEND_URL is set or that /api/* is rewritten to your backend.`
+    );
+  }
   const text = await res.text();
   let data: any = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!res.ok) {
+    // If the response wasn't JSON (e.g. an HTML 404 page from a misconfigured host), surface the URL.
+    if (typeof data === 'string') {
+      throw new Error(
+        `API returned ${res.status} from ${fullUrl}. The backend is not reachable at this URL — set EXPO_PUBLIC_BACKEND_URL or fix the /api rewrite.`
+      );
+    }
     const detail = (data && data.detail) || `Request failed (${res.status})`;
     throw new Error(detail);
   }
@@ -46,6 +61,8 @@ export const api = {
     request('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, name }) }),
   login: (email: string, password: string) =>
     request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  resetPassword: (email: string, new_password: string) =>
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, new_password }) }),
   me: () => request('/auth/me', {}, true),
 
   listEvents: (upcomingOnly = false) =>
