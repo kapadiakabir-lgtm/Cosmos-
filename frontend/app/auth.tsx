@@ -68,12 +68,18 @@ export default function AuthScreen() {
               style={styles.primaryBtn}
               onPress={submit}
               disabled={loading}
+              activeOpacity={0.85}
               testID="auth-submit-button"
             >
               {loading ? (
                 <ActivityIndicator color={colors.textInverse} />
               ) : (
-                <Text style={styles.primaryBtnText}>Step into the night</Text>
+                <>
+                  <Text style={styles.primaryBtnText}>Step into the night</Text>
+                  <View style={styles.arrowBubble}>
+                    <Ionicons name="arrow-forward" size={18} color={colors.gold} />
+                  </View>
+                </>
               )}
             </TouchableOpacity>
 
@@ -117,11 +123,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.gold,
-    paddingVertical: 14, borderRadius: radius.full,
-    alignItems: 'center', marginTop: spacing.sm,
-    shadowColor: colors.gold, shadowOpacity: 0.25, shadowRadius: 16, shadowOffset: { width: 0, height: 4 },
+    paddingVertical: 14,
+    paddingLeft: spacing.lg,
+    paddingRight: 8,
+    borderRadius: radius.full,
+    marginTop: spacing.sm,
+    shadowColor: colors.gold, shadowOpacity: 0.35, shadowRadius: 20, shadowOffset: { width: 0, height: 6 },
   },
-  primaryBtnText: { color: colors.textInverse, fontWeight: '700', fontSize: 15, letterSpacing: 0.5 },
+  primaryBtnText: { color: colors.textInverse, fontWeight: '700', fontSize: 15, letterSpacing: 0.5, flex: 1, textAlign: 'center' },
+  arrowBubble: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.bg,
+    alignItems: 'center', justifyContent: 'center',
+  },
   hint: { color: colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: spacing.md, lineHeight: 16 },
 });
