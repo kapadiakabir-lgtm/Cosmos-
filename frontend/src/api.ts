@@ -51,6 +51,8 @@ async function request(path: string, opts: RequestInit = {}, auth = false) {
 export const api = {
   identify: (username: string) =>
     request('/auth/identify', { method: 'POST', body: JSON.stringify({ username }) }),
+  rename: (name: string) =>
+    request('/auth/rename', { method: 'POST', body: JSON.stringify({ name }) }, true),
   me: () => request('/auth/me', {}, true),
 
   listEvents: (upcomingOnly = false) =>

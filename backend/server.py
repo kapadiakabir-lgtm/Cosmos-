@@ -181,6 +181,24 @@ async def get_me(user: User = Depends(get_current_user)):
     return user
 
 
+class RenameRequest(BaseModel):
+    name: str
+
+
+@api_router.post("/auth/rename", response_model=User)
+async def rename(data: RenameRequest, user: User = Depends(get_current_user)):
+    name = data.name.strip()
+    if len(name) < 2:
+        raise HTTPException(status_code=400, detail="Name must be at least 2 characters")
+    if len(name) > 40:
+        raise HTTPException(status_code=400, detail="Name must be 40 characters or fewer")
+    await db.users.update_one({"user_id": user.user_id}, {"$set": {"name": name}})
+    # Update all existing sightings to show the new display name.
+    await db.sightings.update_many({"user_id": user.user_id}, {"$set": {"user_name": name}})
+    updated = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "password_hash": 0})
+    return User(**updated)
+
+
 # ===== EVENTS =====
 @api_router.get("/events", response_model=List[CelestialEvent])
 async def list_events(upcoming_only: bool = False):
