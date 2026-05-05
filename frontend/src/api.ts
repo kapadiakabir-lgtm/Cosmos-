@@ -1,19 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 
-// Resolution order:
-//   1. EXPO_PUBLIC_BACKEND_URL (build-time env var) — preferred for native + cross-origin web.
-//   2. Same-origin (empty prefix) — works on web hosts (e.g. Vercel) when /api/* is rewritten to the backend.
+// Production backend URL — baked into the bundle so the app works on ANY host
+// (Vercel, Netlify, GitHub Pages, Expo Go, etc.) without needing env vars or
+// rewrites configured at the deploy target. If you later move the backend,
+// either change PROD_BACKEND_URL below OR set EXPO_PUBLIC_BACKEND_URL at build
+// time to override.
+const PROD_BACKEND_URL = 'https://celestial-journal.preview.emergentagent.com';
+
 const RAW = process.env.EXPO_PUBLIC_BACKEND_URL;
 const ENV_BASE = RAW && RAW !== 'undefined' ? RAW.replace(/\/$/, '') : '';
-const BASE: string = ENV_BASE || (Platform.OS === 'web' ? '' : '');
-
-if (!ENV_BASE && Platform.OS !== 'web') {
-  // Native builds (iOS/Android) cannot resolve a relative URL — fail loud during development.
-  console.warn(
-    '[Cosmos] EXPO_PUBLIC_BACKEND_URL is not set. Native builds need an absolute backend URL.'
-  );
-}
+const BASE: string = ENV_BASE || PROD_BACKEND_URL;
 
 const TOKEN_KEY = 'cosmos_token';
 
@@ -35,20 +31,16 @@ async function request(path: string, opts: RequestInit = {}, auth = false) {
   try {
     res = await fetch(fullUrl, { ...opts, headers });
   } catch (e: any) {
-    // Network error — backend unreachable or CORS blocked.
     throw new Error(
-      `Cannot reach API at ${fullUrl}. Check that EXPO_PUBLIC_BACKEND_URL is set or that /api/* is rewritten to your backend.`
+      `Cannot reach API at ${fullUrl}. Check your internet connection or that the backend is online.`
     );
   }
   const text = await res.text();
   let data: any = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!res.ok) {
-    // If the response wasn't JSON (e.g. an HTML 404 page from a misconfigured host), surface the URL.
     if (typeof data === 'string') {
-      throw new Error(
-        `API returned ${res.status} from ${fullUrl}. The backend is not reachable at this URL — set EXPO_PUBLIC_BACKEND_URL or fix the /api rewrite.`
-      );
+      throw new Error(`API returned ${res.status} from ${fullUrl}.`);
     }
     const detail = (data && data.detail) || `Request failed (${res.status})`;
     throw new Error(detail);
