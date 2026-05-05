@@ -1,6 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
-const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
+// Resolution order:
+//   1. EXPO_PUBLIC_BACKEND_URL (build-time env var) — preferred for native + cross-origin web.
+//   2. Same-origin (empty prefix) — works on web hosts (e.g. Vercel) when /api/* is rewritten to the backend.
+const RAW = process.env.EXPO_PUBLIC_BACKEND_URL;
+const ENV_BASE = RAW && RAW !== 'undefined' ? RAW.replace(/\/$/, '') : '';
+const BASE: string = ENV_BASE || (Platform.OS === 'web' ? '' : '');
+
+if (!ENV_BASE && Platform.OS !== 'web') {
+  // Native builds (iOS/Android) cannot resolve a relative URL — fail loud during development.
+  console.warn(
+    '[Cosmos] EXPO_PUBLIC_BACKEND_URL is not set. Native builds need an absolute backend URL.'
+  );
+}
+
 const TOKEN_KEY = 'cosmos_token';
 
 export const setToken = async (token: string) => AsyncStorage.setItem(TOKEN_KEY, token);
